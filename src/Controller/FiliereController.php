@@ -84,4 +84,80 @@ final class FiliereController extends AbstractController{
         ], JsonResponse::HTTP_BAD_REQUEST);
     }
 
+
+    // ajouter use save method in FiliereRepository.php
+    #[Route('/ajouter', name: 'app_filiere_ajouter', methods: 'POST')]
+    public function ajouter(Request $request, FiliereRepository $filiereRepository): JsonResponse
+    { 
+        $data = json_decode($request->getContent(), true);
+
+        $filiere = new Filiere();
+
+        $form = $this->createForm(FiliereType::class, $filiere);
+        $form->submit($data);
+
+        if($form->isSubmitted() && $form->isValid()){
+           
+           $filiereRepository->save($filiere, true);
+           
+            return new JsonResponse([
+                'id' => $filiere->getId(),
+                'status' => 'CREATED_SUCCESSFULLY',
+            ], JsonResponse::HTTP_CREATED);
+        }
+       
+        return new JsonResponse([
+            'status' => 'FORM_ERROR',
+            // 'errors' => $this->getFormErrors($form),
+        ], JsonResponse::HTTP_BAD_REQUEST);
+
+    }
+
+
+    // use method  save in FiliereRepository.php
+    #[Route('/modifier/{id}', name: 'app_filiere_edit', methods: ['PUT'])]
+    public function modifier(
+        int $id,
+        FiliereRepository $filiereRepository, Request $request): JsonResponse
+    {
+        
+        $filiere = $filiereRepository->find($id);
+        
+        if (!$filiere) {
+            return new JsonResponse([
+                'status' => 'Filiere_NOT_FOUND',
+                'message' => "Filiere with ID $id not found."
+            ], JsonResponse::HTTP_NOT_FOUND);
+        }
+
+        $data = json_decode($request->getContent(), true);
+        $form = $this->createForm(FiliereType::class, $filiere);
+        $form->submit($data);
+        
+        if ($form->isSubmitted() && $form->isValid()) {
+            try {
+                $filiereRepository->save($filiere, true);
+    
+                return new JsonResponse([
+                    'id' => $filiere->getId(),
+                    'nom'=> $filiere->getNom(),
+                    'status' => 'Filiere_UPDATED_SUCCESSFULLY',
+                ], JsonResponse::HTTP_OK);
+            } catch (\Throwable $th) {
+                return new JsonResponse([
+                    'status' => 'Filiere_UPDATE_FAILED',
+                    'error' => $th->getMessage()
+                ], JsonResponse::HTTP_INTERNAL_SERVER_ERROR);
+            }
+        }
+
+        return new JsonResponse([
+            'status' => 'FORM_ERROR',
+            // 'errors' => $this->getFormErrors($form),
+        ], JsonResponse::HTTP_BAD_REQUEST);
+    }
+
+
+     
+
 }

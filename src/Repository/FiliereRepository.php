@@ -16,6 +16,15 @@ class FiliereRepository extends ServiceEntityRepository
         parent::__construct($registry, Filiere::class);
     }
 
+    public function save(Filiere $entity, bool $flush = false): void
+    {
+        $em = $this->getEntityManager();
+        $em-> persist($entity);
+        if($flush){
+            $em->flush();
+        }
+    }
+
 //    /**
 //     * @return Filiere[] Returns an array of Filiere objects
 //     */
