@@ -14,6 +14,7 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/filiere')]
 final class FiliereController extends AbstractController{
 
+    // Create Method
     #[Route('/create', name: 'app_filiere', methods: 'POST')]
     public function create(Request $request, EntityManagerInterface $em): JsonResponse
     { 
@@ -41,6 +42,9 @@ final class FiliereController extends AbstractController{
 
     }
 
+
+
+    // Edit method 
     #[Route('/edit/{id}', name: 'app_filiere_edit', methods: ['PUT'])]
     public function edit(
         int $id,
@@ -84,8 +88,40 @@ final class FiliereController extends AbstractController{
         ], JsonResponse::HTTP_BAD_REQUEST);
     }
 
+    #[Route('/delete/{id}', name: 'app_filiere_delete', methods: ['DELETE'])]
+    public function delete(int $id, FiliereRepository $filiereRepository,
+    EntityManagerInterface $em): JsonResponse
+    {
+        $filiere = $filiereRepository->find($id);
 
-    // ajouter use save method in FiliereRepository.php
+        if (!$filiere) {
+            return new JsonResponse([
+                'status' => 'Filiere_NOT_FOUND',
+                'message' => "Filiere with ID $id not found."
+            ], JsonResponse::HTTP_NOT_FOUND);
+        }
+        
+        try {
+
+            $em->remove($filiere);
+            $em->flush();
+    
+            return new JsonResponse([
+                'id' => $filiere->getId(),
+                'nom'=> $filiere->getNom(),
+                'status' => 'Filiere_REMOVED_SUCCESSFULLY',
+            ], JsonResponse::HTTP_OK);
+        } catch (\Throwable $th) {
+            return new JsonResponse([
+                'status' => 'Filiere_REMOVED_FAILED',
+                'error' => $th->getMessage()
+            ], JsonResponse::HTTP_INTERNAL_SERVER_ERROR);
+        }
+  
+    }
+
+
+    // ajouter save() method in FiliereRepository.php
     #[Route('/ajouter', name: 'app_filiere_ajouter', methods: 'POST')]
     public function ajouter(Request $request, FiliereRepository $filiereRepository): JsonResponse
     { 
