@@ -194,6 +194,71 @@ final class FiliereController extends AbstractController{
     }
 
 
-     
 
+    #[Route('/show/{id}', name: 'product_show', methods: ['GET'])]
+    public function show(EntityManagerInterface $entityManager, int $id): JsonResponse
+    {
+        $filiere = $entityManager->getRepository(Filiere::class)->find($id);
+
+        if (!$filiere) {
+            return new JsonResponse([
+                'status' => 'Filiere_NOT_FOUND',
+                'message' => "Filiere with ID $id not found."
+            ], JsonResponse::HTTP_NOT_FOUND);
+        }
+
+          return new JsonResponse([
+                    'id' => $filiere->getId(),
+                    'nom'=> $filiere->getNom(),
+                ], JsonResponse::HTTP_OK);
+    }
+
+
+    //show all
+    #[Route('/show', name: 'product_show_all', methods: ['GET'])]
+    public function showAll(EntityManagerInterface $entityManager): JsonResponse
+    {
+        $filieres = $entityManager->getRepository(Filiere::class)->findAll();
+
+        if (!$filieres) {
+            return new JsonResponse([
+                'status' => 'No Filiere_FOUND',
+            ], JsonResponse::HTTP_NOT_FOUND);
+        }
+
+        $data = array_map(function ($filiere) {
+            return [
+                'id' => $filiere->getId(),
+                'nom' => $filiere->getNom(),
+            ];
+        }, $filieres);
+    
+        return new JsonResponse($data, JsonResponse::HTTP_OK);
+    }
+
+    //show by nom
+    #[Route('/show/{nom}', name: 'product_show', methods: ['GET'])]
+    public function showByNom(EntityManagerInterface $entityManager, string $nom): JsonResponse
+    {
+        $filieres = $entityManager->getRepository(Filiere::class)->findBy(
+            ['nom' => $nom],
+            ['id' => 'DESC'] // ACS
+        );
+
+        if (!$filieres) {
+            return new JsonResponse([
+                'status' => 'Filiere_NOT_FOUND',
+                'message' => "Filiere with ID $nom not found."
+            ], JsonResponse::HTTP_NOT_FOUND);
+        }
+
+        $data = array_map(function ($filiere) {
+            return [
+                'id' => $filiere->getId(),
+                'nom' => $filiere->getNom(),
+            ];
+        }, $filieres);
+    
+        return new JsonResponse($data, JsonResponse::HTTP_OK);
+    }
 }
