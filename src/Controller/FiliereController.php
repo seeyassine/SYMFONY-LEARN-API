@@ -261,6 +261,27 @@ final class FiliereController extends AbstractController{
         return new JsonResponse($data, JsonResponse::HTTP_OK);
     }
 
+    #[Route('/shows/{nom}', name: 'product_shows', methods: ['GET'])]
+    public function showByNoms(EntityManagerInterface $entityManager, string $nom): JsonResponse
+    {
+        $filiere = $entityManager->getRepository(Filiere::class)->findOneByNom($nom);
+
+        if (!$filiere) {
+            return new JsonResponse([
+                'status' => 'Filiere_NOT_FOUND',
+                'message' => "Filiere with ID $nom not found."
+            ], JsonResponse::HTTP_NOT_FOUND);
+        }
+
+       $json = [
+                'id' => $filiere->getId(),
+                'nom' => $filiere->getNom(),
+            ];
+        
+
+        return new JsonResponse($json , JsonResponse::HTTP_OK);
+    }
+
     //edits method work
     #[Route('/edits/{id}', name: 'app_filiere_edit', methods: ['PUT'])]
     public function edits(
