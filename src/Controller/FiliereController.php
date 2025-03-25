@@ -14,6 +14,7 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/filiere')]
 final class FiliereController extends AbstractController{
 
+    // Create Method
     #[Route('/create', name: 'app_filiere', methods: 'POST')]
     public function create(Request $request, EntityManagerInterface $em): JsonResponse
     { 
@@ -41,7 +42,10 @@ final class FiliereController extends AbstractController{
 
     }
 
-    #[Route('/edit/{id}', name: 'app_filiere_edit', methods: ['PUT'])]
+
+
+    // Edit method 
+    #[Route('/edit/{id}', name: 'app_filiere_edit', methods: 'PUT')]
     public function edit(
         int $id,
         EntityManagerInterface $em,
@@ -84,8 +88,39 @@ final class FiliereController extends AbstractController{
         ], JsonResponse::HTTP_BAD_REQUEST);
     }
 
+    #[Route('/delete/{id}', name: 'app_filiere_delete', methods: ['DELETE'])]
+    public function delete(int $id, EntityManagerInterface $em): JsonResponse
+    {
+        $filiere = $em->getRepository(Filiere::class)->find($id);
 
-    // ajouter use save method in FiliereRepository.php
+        if (!$filiere) {
+            return new JsonResponse([
+                'status' => 'Filiere_NOT_FOUND',
+                'message' => "Filiere with ID $id not found."
+            ], JsonResponse::HTTP_NOT_FOUND);
+        }
+        
+        try {
+
+            $em->remove($filiere);
+            $em->flush();
+    
+            return new JsonResponse([
+                'id' => $filiere->getId(),
+                'nom'=> $filiere->getNom(),
+                'status' => 'Filiere_REMOVED_SUCCESSFULLY',
+            ], JsonResponse::HTTP_OK);
+        } catch (\Throwable $th) {
+            return new JsonResponse([
+                'status' => 'Filiere_REMOVED_FAILED',
+                'error' => $th->getMessage()
+            ], JsonResponse::HTTP_INTERNAL_SERVER_ERROR);
+        }
+  
+    }
+
+
+    // ajouter save() method in FiliereRepository.php
     #[Route('/ajouter', name: 'app_filiere_ajouter', methods: 'POST')]
     public function ajouter(Request $request, FiliereRepository $filiereRepository): JsonResponse
     { 
@@ -158,6 +193,137 @@ final class FiliereController extends AbstractController{
     }
 
 
-     
+
+    #[Route('/show/{id}', name: 'product_show', methods: ['GET'])]
+    public function show(EntityManagerInterface $entityManager, int $id): JsonResponse
+    {
+        $filiere = $entityManager->getRepository(Filiere::class)->find($id);
+
+        if (!$filiere) {
+            return new JsonResponse([
+                'status' => 'Filiere_NOT_FOUND',
+                'message' => "Filiere with ID $id not found."
+            ], JsonResponse::HTTP_NOT_FOUND);
+        }
+
+          return new JsonResponse([
+                    'id' => $filiere->getId(),
+                    'nom'=> $filiere->getNom(),
+                ], JsonResponse::HTTP_OK);
+    }
+
+
+    //show all
+    #[Route('/show', name: 'product_show_all', methods: ['GET'])]
+    public function showAll(EntityManagerInterface $entityManager): JsonResponse
+    {
+        $filieres = $entityManager->getRepository(Filiere::class)->findAll();
+
+        if (!$filieres) {
+            return new JsonResponse([
+                'status' => 'No Filiere_FOUND',
+            ], JsonResponse::HTTP_NOT_FOUND);
+        }
+
+        $data = array_map(function ($filiere) {
+            return [
+                'id' => $filiere->getId(),
+                'nom' => $filiere->getNom(),
+            ];
+        }, $filieres);
+    
+        return new JsonResponse($data, JsonResponse::HTTP_OK);
+    }
+
+    //show by nom
+    #[Route('/show/{nom}', name: 'product_show', methods: ['GET'])]
+    public function showByNom(EntityManagerInterface $entityManager, string $nom): JsonResponse
+    {
+        $filieres = $entityManager->getRepository(Filiere::class)->findBy(
+            ['nom' => $nom],
+            ['id' => 'DESC'] // ACS
+        );
+
+        if (!$filieres) {
+            return new JsonResponse([
+                'status' => 'Filiere_NOT_FOUND',
+                'message' => "Filiere with ID $nom not found."
+            ], JsonResponse::HTTP_NOT_FOUND);
+        }
+
+        $data = array_map(function ($filiere) {
+            return [
+                'id' => $filiere->getId(),
+                'nom' => $filiere->getNom(),
+            ];
+        }, $filieres);
+    
+        return new JsonResponse($data, JsonResponse::HTTP_OK);
+    }
+
+    //find By Nom use just findOneByNom or define in FiliereRepository.php
+    #[Route('/shows/{nom}', name: 'product_shows', methods: ['GET'])]
+    public function showByNoms(EntityManagerInterface $entityManager, string $nom): JsonResponse
+    {
+        $filiere = $entityManager->getRepository(Filiere::class)->findOneByNom($nom);
+
+        if (!$filiere) {
+            return new JsonResponse([
+                'status' => 'Filiere_NOT_FOUND',
+                'message' => "Filiere with ID $nom not found."
+            ], JsonResponse::HTTP_NOT_FOUND);
+        }
+
+       $json = [
+                'id' => $filiere->getId(),
+                'nom' => $filiere->getNom(),
+            ];
+        
+
+        return new JsonResponse($json , JsonResponse::HTTP_OK);
+    }
+
+    //edits method work
+    #[Route('/edits/{id}', name: 'app_filiere_edit', methods: ['PUT'])]
+    public function edits(
+        int $id,
+        EntityManagerInterface $em,
+        Request $request
+    ): JsonResponse {
+       
+        $filiere = $em->getRepository(Filiere::class)->find($id);
+        
+        if (!$filiere) {
+            return new JsonResponse([
+                'status' => 'Filiere_NOT_FOUND',
+                'message' => "Filiere with ID $id not found."
+            ], JsonResponse::HTTP_NOT_FOUND);
+        }
+
+        $data = json_decode($request->getContent(), true);
+        $form = $this->createForm(FiliereType::class, $filiere);
+        $form->submit($data);
+        
+        if ($form->isSubmitted() && $form->isValid()) {
+            try {
+                $em->flush();
+
+                return new JsonResponse([
+                    'id' => $filiere->getId(),
+                    'nom' => $filiere->getNom(),
+                    'status' => 'Filiere_UPDATED_SUCCESSFULLY',
+                ], JsonResponse::HTTP_OK);
+            } catch (\Throwable $th) {
+                return new JsonResponse([
+                    'status' => 'Filiere_UPDATE_FAILED',
+                    'error' => $th->getMessage()
+                ], JsonResponse::HTTP_INTERNAL_SERVER_ERROR);
+            }
+        }
+
+        return new JsonResponse([
+            'status' => 'FORM_ERROR',
+        ], JsonResponse::HTTP_BAD_REQUEST);
+    }
 
 }
