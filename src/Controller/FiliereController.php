@@ -261,6 +261,7 @@ final class FiliereController extends AbstractController{
         return new JsonResponse($data, JsonResponse::HTTP_OK);
     }
 
+    //find By Nom use just findOneByNom or define in FiliereRepository.php
     #[Route('/shows/{nom}', name: 'product_shows', methods: ['GET'])]
     public function showByNoms(EntityManagerInterface $entityManager, string $nom): JsonResponse
     {

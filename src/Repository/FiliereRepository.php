@@ -25,6 +25,21 @@ class FiliereRepository extends ServiceEntityRepository
         }
     }
 
+    public function  findOneByNom(string $nom): ?Filiere
+    {
+        $db = $this->createQueryBuilder('l');
+        $db 
+            -> where('l.nom = :nom')
+            -> setParameter('nom', $nom)
+            // -> andWhere('l.countryCode = :countryCode')
+            // -> setParameter('countryCode', 'PL')
+            ;
+        $query = $db->getQuery();
+        $entity = $query->getOneOrNullResult();
+
+        return $entity;
+    }
+
 //    /**
 //     * @return Filiere[] Returns an array of Filiere objects
 //     */
